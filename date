@@ -1,0 +1,63 @@
+# 导入 datetime 和 zhdate 模块
+import datetime
+import zhdate
+
+# 定义天干、地支、生肖、月份、日份、节气等常量
+gan = '甲乙丙丁戊己庚辛壬癸'
+zhi = '子丑寅卯辰巳午未申酉戌亥'
+xiao = '鼠牛虎兔龙蛇马羊猴鸡狗猪'
+lm = '正二三四五六七八九十冬腊'
+ld = '初一初二初三初四初五初六初七初八初九初十十一十二十三十四十五十六十七十八十九二十廿一廿二廿三廿四廿五廿六廿七廿八廿九三十'
+jie = '小寒大寒立春雨水惊蛰春分清明谷雨立夏小满芒种夏至小暑大暑立秋处暑白露秋分寒露霜降立冬小雪大雪冬至'
+jie_qi_odd = "立春惊蛰清明立夏芒种小暑立秋白露寒露立冬大雪小寒" # 节气节点，如立春-惊蛰是正月，两个节气一个月
+jie_qi_month = {
+  "立春": [0, "寅"],
+  "惊蛰": [1, "卯"],
+  "清明": [2, "辰"],
+  "立夏": [3, "巳"],
+  "芒种": [4, "午"],
+  "小暑": [5, "未"],
+  "立秋": [6, "申"],
+  "白露": [7, "酉"],
+  "寒露": [8, "戌"],
+  "立冬": [9, "亥"],
+  "大雪": [10, "子"],
+  "小寒": [11, "丑"],
+}
+
+# 定义一个函数，根据公历日期和时间返回生辰八字
+def get_bazi(year, month, day, hour, minute):
+  # 将公历转换为农历
+  dt = datetime.datetime(year, month, day, hour, minute)
+  lunar = zhdate.ZhDate.from_datetime(dt)
+  # 获取农历的年、月、日、时
+  ln_year = lunar.year
+  ln_month = lunar.month
+  ln_day = lunar.day
+  ln_hour = lunar.hour
+  # 计算年的天干和地支
+  year_gan = gan[(ln_year - 4) % 10]
+  year_zhi = zhi[(ln_year - 4) % 12]
+  # 计算月的天干和地支
+  # 先获取当月的节气
+  jie_qi = lunar.get_24_term()
+  # 如果是节气节点，就用上一个节气
+  if jie_qi in jie_qi_odd:
+    jie_qi = lunar.prev_24_term()
+  # 根据节气确定月的地支
+  month_zhi = jie_qi_month[jie_qi][1]
+  # 根据年的天干和月的地支确定月的天干
+  month_gan = gan[(gan.index(year_gan) * 2 + jie_qi_month[jie_qi][0]) % 10]
+  # 计算日的天干和地支
+  # 先计算1900年1月1日到当天的天数
+  days = (dt - datetime.datetime(1900, 1, 1)).days
+  # 根据天数确定日的天干和地支
+  day_gan = gan[(days + 6) % 10]
+  day_zhi = zhi[(days + 8) % 12]
+  # 计算时的天干和地支
+  # 先根据时辰确定时的地支
+  hour_zhi = zhi[(ln_hour + 1) // 2 % 12]
+  # 根据日的天干和时的地支确定时的天干
+  hour_gan = gan[(gan.index(day_gan) * 2 + (ln_hour + 1) // 2) % 10]
+  # 返回生辰八字
+  return year_gan + year_zhi + " " + month_gan + month_zhi + " " + day_gan + day_zhi + " " + hour_gan + hour_zhi
